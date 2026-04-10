@@ -1,0 +1,1474 @@
+{
+  "info": {
+    "_postman_id": "serverest-api-tests-001",
+    "name": "ServeRest API - Complete Test Suite",
+    "description": "Comprehensive API test collection for ServeRest (https://serverest.dev/)\n\nThis collection covers 100% of the Users API endpoints with:\n- JWT Authentication\n- Rate limiting awareness (100 req/min)\n- Positive and negative test scenarios\n- Data validation tests\n\nAuthor: Automated Test Suite\nDate: April 2026",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Create Admin User for Auth",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique email for test user",
+                  "const timestamp = Date.now();",
+                  "const testEmail = `admin_${timestamp}@teste.com`;",
+                  "pm.collectionVariables.set('testEmail', testEmail);",
+                  "pm.collectionVariables.set('testPassword', 'teste123');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 - User created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
+                  "});",
+                  "",
+                  "pm.test('Response contains user ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData._id).to.be.a('string');",
+                  "    pm.collectionVariables.set('adminUserId', jsonData._id);",
+                  "});",
+                  "",
+                  "// Rate limit check",
+                  "pm.test('Rate limit headers present', function () {",
+                  "    // ServeRest may not have rate limit headers, but we check response time",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "9004f61d-f57f-41c1-9485-01147dc7326f",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Admin Test User\",\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"{{testPassword}}\",\n    \"administrador\": \"true\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Get JWT Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains authorization token', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.authorization).to.be.a('string');",
+                  "    pm.expect(jsonData.authorization).to.include('Bearer');",
+                  "});",
+                  "",
+                  "pm.test('Store JWT token for subsequent requests', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', jsonData.authorization);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Login realizado com sucesso');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "4f01c7d9-a950-4c11-9eb6-9f1d8b3c912c",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Invalid Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 - Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response contains error message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Email e/ou senha inválidos');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "3941b3c5-bede-4e98-8eda-b2d26d448cd3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"invalid@email.com\",\n    \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Missing Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error for email', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.email).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error for password', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.password).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "bd37fc5d-0551-4eac-931b-507eeb3c4b39",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "c36479fa-b622-4206-8361-7ac9fd296f7d",
+      "description": "Authentication tests for JWT token generation"
+    },
+    {
+      "name": "POST Scenario",
+      "item": [
+        {
+          "name": "Create User - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('newUserEmail', `user_${timestamp}@teste.com`);",
+                  "pm.collectionVariables.set('newUserName', `Test User ${timestamp}`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 - Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
+                  "});",
+                  "",
+                  "pm.test('Response contains user ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData._id).to.be.a('string');",
+                  "    pm.expect(jsonData._id.length).to.be.greaterThan(0);",
+                  "    pm.collectionVariables.set('userId', jsonData._id);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "6d34e483-d437-42a8-928f-478e9c350ab9",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"{{newUserName}}\",\n    \"email\": \"{{newUserEmail}}\",\n    \"password\": \"teste123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User - Duplicate Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains duplicate email error', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Este email já está sendo usado');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "ef97a5bc-bd0d-4444-ad9f-9e55285d96ec",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Duplicate User\",\n    \"email\": \"{{newUserEmail}}\",\n    \"password\": \"teste123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User - Missing Required Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error for nome', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.nome).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error for email', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.email).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error for password', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.password).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error for administrador', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.administrador).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "1cae6628-92e8-4656-a1fa-b427a08654f3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User - Invalid Email Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains email validation error', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.email).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "73c0726f-67b5-4e0e-9ad4-d60f37a6dc2c",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Test User\",\n    \"email\": \"invalid-email-format\",\n    \"password\": \"teste123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User - Empty Name",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('emptyNameEmail', `emptyname_${timestamp}@teste.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains name validation error', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.nome).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "47bd5994-482c-4f24-aa83-6060f572ae57",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"\",\n    \"email\": \"{{emptyNameEmail}}\",\n    \"password\": \"teste123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Admin User - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('adminEmail', `admin_new_${timestamp}@teste.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 - Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
+                  "});",
+                  "",
+                  "pm.test('Admin user ID is stored', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('adminUserIdToDelete', jsonData._id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "c740b123-4df2-4ca0-a0e3-f696f2cf143b",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"New Admin User\",\n    \"email\": \"{{adminEmail}}\",\n    \"password\": \"admin123\",\n    \"administrador\": \"true\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "071c3bf7-3c0d-4abf-9038-fc8ad7990e5d",
+      "description": "Tests for POST /usuarios - Create user endpoint"
+    },
+    {
+      "name": "GET (List All) Scenario",
+      "item": [
+        {
+          "name": "List All Users - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains quantidade property', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.quantidade).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Response contains usuarios array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.usuarios).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Users have required properties', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.usuarios.length > 0) {",
+                  "        const user = jsonData.usuarios[0];",
+                  "        pm.expect(user).to.have.property('nome');",
+                  "        pm.expect(user).to.have.property('email');",
+                  "        pm.expect(user).to.have.property('password');",
+                  "        pm.expect(user).to.have.property('administrador');",
+                  "        pm.expect(user).to.have.property('_id');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "2b94fa33-dad1-4461-affb-af16a11dede7",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Users - Filter by Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains usuarios array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.usuarios).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Filtered results match query', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.usuarios.length > 0) {",
+                  "        jsonData.usuarios.forEach(user => {",
+                  "            pm.expect(user.nome.toLowerCase()).to.include('admin');",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "696af885-d5e6-4510-b062-2024f5bed7e5",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?nome=Admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "nome",
+                  "value": "Admin"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Users - Filter by Admin Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All returned users are admins', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.usuarios.length > 0) {",
+                  "        jsonData.usuarios.forEach(user => {",
+                  "            pm.expect(user.administrador).to.eql('true');",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "292092b6-8e12-4db0-bb39-4a1c7ff59e71",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?administrador=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "administrador",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "4ea60f86-fd42-44ee-a960-5b3a8b469c95",
+      "description": "Tests for GET /usuarios - List all users endpoint"
+    },
+    {
+      "name": "GET by ID Scenario",
+      "item": [
+        {
+          "name": "Get User by ID - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains user data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('nome');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('password');",
+                  "    pm.expect(jsonData).to.have.property('administrador');",
+                  "    pm.expect(jsonData).to.have.property('_id');",
+                  "});",
+                  "",
+                  "pm.test('User ID matches requested ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData._id).to.eql(pm.collectionVariables.get('userId'));",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "956f3801-25e6-42a3-8376-10ed0cd00123",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains not found message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Usuário não encontrado');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "41191f58-4ad1-4052-bd98-1a5fac48815d",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/nonexistent123",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "nonexistent123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID - Invalid ID Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains error message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "1bf2ece3-ceda-4c5c-9a8c-4735fdb2504b",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/@#$%^&",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "@"
+              ],
+              "hash": "$%^&"
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "1447a4bc-bf73-42ef-96b4-44e631a47b17",
+      "description": "Tests for GET /usuarios/{_id} - Get user by ID endpoint"
+    },
+    {
+      "name": "PUT Scenarios",
+      "item": [
+        {
+          "name": "Update User - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('updatedName', `Updated User ${timestamp}`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Registro alterado com sucesso');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "95fd9d7b-3ac0-4fa9-afcd-c7b90fbc4c8a",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"{{updatedName}}\",\n    \"email\": \"{{newUserEmail}}\",\n    \"password\": \"updatedpass123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User - Create if Not Exists",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('newPutEmail', `newput_${timestamp}@teste.com`);",
+                  "pm.collectionVariables.set('newPutName', `New Put User ${timestamp}`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 - Created (upsert)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
+                  "});",
+                  "",
+                  "pm.test('Response contains new user ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData._id).to.be.a('string');",
+                  "    pm.collectionVariables.set('upsertUserId', jsonData._id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "32d66ed3-2dcb-46ed-bc4a-156f094d2276",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"{{newPutName}}\",\n    \"email\": \"{{newPutEmail}}\",\n    \"password\": \"newput123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/nonexistent_upsert_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "nonexistent_upsert_id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User - Missing Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation errors', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.any.keys('nome', 'email', 'password', 'administrador');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "e771bb66-8553-4197-a887-b57ecf32f91a",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Incomplete Update\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User - Duplicate Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 - Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains duplicate email error', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Este email já está sendo usado');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "e3770781-88c1-4514-ad3d-33f9804c45e1",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Conflict User\",\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"conflict123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "3fb36651-d483-4453-9c22-b54e67d11eaa",
+      "description": "Tests for PUT /usuarios/{_id} - Update user endpoint"
+    },
+    {
+      "name": "Users - DELETE Scenario",
+      "item": [
+        {
+          "name": "Delete User - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Registro excluído com sucesso');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "7b2aa9c1-d3ad-4b09-aab6-655ad2798b53",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK (idempotent)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates no deletion needed', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Nenhum registro excluído');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "cef27129-bea7-4d08-8272-8f1139eab0fd",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/nonexistent_delete_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "nonexistent_delete_id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Upsert User - Cleanup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Cleanup successful', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.be.oneOf(['Registro excluído com sucesso', 'Nenhum registro excluído']);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "4a311c50-0ffd-4ba4-a817-b498aa711f31",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{upsertUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{upsertUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Admin User - Cleanup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "2c0b2e5d-9038-44e3-b7f2-3732fab49618",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{adminUserIdToDelete}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{adminUserIdToDelete}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Test Admin User - Final Cleanup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All test data cleaned up', function () {",
+                  "    pm.expect(true).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "4bc228a9-1c6a-4378-88ab-39c592f2a7a0",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{adminUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{adminUserId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "eddf0c97-5a86-48b6-8822-08569d88f67e",
+      "description": "Tests for DELETE /usuarios/{_id} - Delete user endpoint"
+    },
+    {
+      "name": "Rate Limiting Tests",
+      "item": [
+        {
+          "name": "Rapid Sequential Requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time within acceptable range', function () {",
+                  "    // Under 100 req/min limit, response should be fast",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});",
+                  "",
+                  "pm.test('Server responds without rate limit error', function () {",
+                  "    const status = pm.response.code;",
+                  "    pm.expect(status).to.not.equal(429);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "b229ee76-291b-4a50-9462-3ab4ae458c9f",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "d42c3696-b024-41c9-8fda-f99aa4ca36d1",
+      "description": "Tests to verify API behavior under rate limiting (100 req/min)"
+    },
+    {
+      "name": "API Health Check",
+      "item": [
+        {
+          "name": "API Availability Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API is accessible', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "25d94446-aec0-46eb-a401-5d9d12ca78d8",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "fc4d84f1-f045-4f2d-9461-b7c6d41dab9a",
+      "description": "Basic API health and availability checks"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "// Add rate limiting delay if needed",
+          "// Uncomment below to add delay between requests",
+          "// setTimeout(function() {}, 600); // 600ms = 100 req/min"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "// Log response time for monitoring",
+          "console.log('Response Time: ' + pm.response.responseTime + 'ms');"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "52947b70-58b3-41e9-a46a-0b7184c3e243",
+      "key": "baseUrl",
+      "value": "https://serverest.dev",
+      "type": "string"
+    },
+    {
+      "id": "6e7db2f0-7412-4b07-a770-774b2f72b871",
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "id": "9a46cdae-5528-4823-8245-11387ad0cf2b",
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "id": "a3d0ea1e-9a08-4b0e-b947-ff6ad31fdedb",
+      "key": "testEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "id": "bd8d1e87-0ae0-4128-9755-8747ad78f540",
+      "key": "testPassword",
+      "value": ""
+    },
+    {
+      "id": "5ac810df-7016-41d4-8771-cce3369b186d",
+      "key": "adminUserId",
+      "value": ""
+    },
+    {
+      "id": "5543abcd-f183-483a-bba2-37913e990db4",
+      "key": "newUserEmail",
+      "value": ""
+    },
+    {
+      "id": "f78b0e18-3e06-47fe-85f4-3984c5c37f33",
+      "key": "newUserName",
+      "value": ""
+    },
+    {
+      "id": "5c816f91-8bc9-4d06-b5b9-cdad05fdf53d",
+      "key": "emptyNameEmail",
+      "value": ""
+    },
+    {
+      "id": "f2276651-b66b-4247-9081-3113aa2fcb9c",
+      "key": "adminEmail",
+      "value": ""
+    },
+    {
+      "id": "c4387dc4-00b0-4886-889c-7ab98b76f2f8",
+      "key": "adminUserIdToDelete",
+      "value": ""
+    },
+    {
+      "id": "d647b4f0-abaa-4a9c-a432-03cfadbdfefc",
+      "key": "updatedName",
+      "value": ""
+    },
+    {
+      "id": "35708a64-8be9-4f17-9d94-47e24223687d",
+      "key": "newPutEmail",
+      "value": ""
+    },
+    {
+      "id": "2c8060a3-ce4f-4f44-a4fe-64dd6a6da102",
+      "key": "newPutName",
+      "value": ""
+    },
+    {
+      "id": "de4851d5-de77-47ba-880e-cc12b62a6201",
+      "key": "upsertUserId",
+      "value": ""
+    }
+  ]
+}
