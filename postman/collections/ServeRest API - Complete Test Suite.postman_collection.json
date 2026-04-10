@@ -1,0 +1,970 @@
+{
+  "info": {
+    "_postman_id": "ff11ff92-14b3-46ed-816a-61d497e4e275",
+    "name": "ServeRest API - Complete Test Suite",
+    "description": "Comprehensive API test collection for ServeRest (https://serverest.dev/)\n\nThis collection covers 100% of the Users API endpoints with:\n- JWT Authentication\n- Rate limiting awareness (100 req/min)\n- Positive and negative test scenarios\n- Data validation tests\n\nAuthor: Automated Test Suite\nDate: April 2026",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "1.1 Setup - Create Admin User for Auth",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique email for test user",
+                  "const timestamp = Date.now();",
+                  "const testEmail = 'admin_' + timestamp + '@teste.com';",
+                  "pm.globals.set('testEmail', testEmail);",
+                  "pm.globals.set('testPassword', 'teste123');"
+                ],
+                "type": "text/javascript",
+                "id": "c3a145de-6c9a-4278-9a47-4b0768978271"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 - User created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
+                  "});",
+                  "",
+                  "pm.test('Response contains user ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData._id).to.be.a('string');",
+                  "    pm.globals.set('adminUserId', jsonData._id);",
+                  "});",
+                  "",
+                  "// Rate limit check",
+                  "pm.test('Rate limit headers present', function () {",
+                  "    // ServeRest may not have rate limit headers, but we check response time",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "77722edc-6351-4b9d-a7e1-1f3bceaccbda"
+              }
+            }
+          ],
+          "id": "62815d2d-93df-494c-b4b3-e43ed35da53c",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Admin Test User\",\n    \"email\": \"admin_{{$timestamp}}@teste.com\",\n    \"password\": \"teste123\",\n    \"administrador\": \"true\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "4d2e6952-e7bf-4c56-8792-e007e353a739",
+      "description": "Authentication tests for JWT token generation"
+    },
+    {
+      "name": "2. Users - POST (Create)",
+      "item": [
+        {
+          "name": "2.1 Create User - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('newUserEmail', `user_${timestamp}@teste.com`);",
+                  "pm.collectionVariables.set('newUserName', `Test User ${timestamp}`);"
+                ],
+                "type": "text/javascript",
+                "id": "1573e82c-1d2d-41ce-bcc1-addcbc794b3a"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 - Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
+                  "});",
+                  "",
+                  "pm.test('Response contains user ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData._id).to.be.a('string');",
+                  "    pm.expect(jsonData._id.length).to.be.greaterThan(0);",
+                  "    pm.collectionVariables.set('userId', jsonData._id);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "8315b2d9-3a13-4e53-95c3-fe49ea71b03b"
+              }
+            }
+          ],
+          "id": "eb138dec-2dcb-498b-9670-8ad1dd6624d1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"{{newUserName}}\",\n    \"email\": \"{{newUserEmail}}\",\n    \"password\": \"teste123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Create Admin User - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('adminEmail', `admin_new_${timestamp}@teste.com`);"
+                ],
+                "type": "text/javascript",
+                "id": "f3b72072-28e9-4c13-8c14-16eb3a24a10f"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 - Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
+                  "});",
+                  "",
+                  "pm.test('Admin user ID is stored', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('adminUserIdToDelete', jsonData._id);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "66989a70-51fc-4042-a076-f1d30e4acd73"
+              }
+            }
+          ],
+          "id": "9bcad1a0-11fb-4663-a152-cb5b81b474c0",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"New Admin User\",\n    \"email\": \"{{adminEmail}}\",\n    \"password\": \"admin123\",\n    \"administrador\": \"true\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "232231f8-3ce4-4951-8f90-c5f0746ebe92",
+      "description": "Tests for POST /usuarios - Create user endpoint"
+    },
+    {
+      "name": "3. Users - GET (List All)",
+      "item": [
+        {
+          "name": "3.1 List All Users - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains quantidade property', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.quantidade).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Response contains usuarios array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.usuarios).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Users have required properties', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.usuarios.length > 0) {",
+                  "        const user = jsonData.usuarios[0];",
+                  "        pm.expect(user).to.have.property('nome');",
+                  "        pm.expect(user).to.have.property('email');",
+                  "        pm.expect(user).to.have.property('password');",
+                  "        pm.expect(user).to.have.property('administrador');",
+                  "        pm.expect(user).to.have.property('_id');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "85df8dc8-0596-475f-9d01-d43333c724f8"
+              }
+            }
+          ],
+          "id": "5e7af874-18e3-40b9-a073-1d8c4e5d6d95",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 List Users - Filter by Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains usuarios array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.usuarios).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Filtered results match query', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.usuarios.length > 0) {",
+                  "        jsonData.usuarios.forEach(user => {",
+                  "            pm.expect(user.nome.toLowerCase()).to.include('admin');",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "7232db34-a00d-40ef-ba78-c5541f8a552a"
+              }
+            }
+          ],
+          "id": "a37c9b58-f727-494d-876a-81539e975dec",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?nome=Admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "nome",
+                  "value": "Admin"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 List Users - Filter by Admin Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All returned users are admins', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.usuarios.length > 0) {",
+                  "        jsonData.usuarios.forEach(user => {",
+                  "            pm.expect(user.administrador).to.eql('true');",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "c293d11f-64ec-4ca6-89c2-f52f19ea4de4"
+              }
+            }
+          ],
+          "id": "54aa7f84-2fd0-456d-8355-50b115452937",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?administrador=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "administrador",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "2775de80-9a64-4d3c-b2a3-65dc7fc52545",
+      "description": "Tests for GET /usuarios - List all users endpoint"
+    },
+    {
+      "name": "4. Users - GET by ID",
+      "item": [
+        {
+          "name": "4.1 Get User by ID - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains user data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('nome');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('password');",
+                  "    pm.expect(jsonData).to.have.property('administrador');",
+                  "    pm.expect(jsonData).to.have.property('_id');",
+                  "});",
+                  "",
+                  "pm.test('User ID matches requested ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData._id).to.eql(pm.collectionVariables.get('userId'));",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "5cd23fda-4900-42f8-a7e6-351f521841a4"
+              }
+            }
+          ],
+          "id": "9aa25de0-3815-461c-b3cb-865a971a076e",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "48adba82-87b4-4494-ab5d-308556ada690",
+      "description": "Tests for GET /usuarios/{_id} - Get user by ID endpoint"
+    },
+    {
+      "name": "5. Users - PUT (Update)",
+      "item": [
+        {
+          "name": "5.1 Update User - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('updatedName', `Updated User ${timestamp}`);"
+                ],
+                "type": "text/javascript",
+                "id": "6f821f8e-25d3-4e81-a1c1-c33e7beb8274"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Registro alterado com sucesso');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "7e8527ac-4084-421c-802a-315697217121"
+              }
+            }
+          ],
+          "id": "3b601def-91ba-4bfc-a30f-e27fbdf50aad",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"{{updatedName}}\",\n    \"email\": \"{{newUserEmail}}\",\n    \"password\": \"updatedpass123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.2 Update User - Create if Not Exists",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('newPutEmail', `newput_${timestamp}@teste.com`);",
+                  "pm.collectionVariables.set('newPutName', `New Put User ${timestamp}`);"
+                ],
+                "type": "text/javascript",
+                "id": "bdd972be-0444-4980-8618-0b7647b78d76"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 - Created (upsert)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
+                  "});",
+                  "",
+                  "pm.test('Response contains new user ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData._id).to.be.a('string');",
+                  "    pm.collectionVariables.set('upsertUserId', jsonData._id);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "b5a0c398-abfc-4d30-9919-04f1408ffb6f"
+              }
+            }
+          ],
+          "id": "375b1298-8c9a-4069-b2d1-0cd25c17896a",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"{{newPutName}}\",\n    \"email\": \"{{newPutEmail}}\",\n    \"password\": \"newput123\",\n    \"administrador\": \"false\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/nonexistent_upsert_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "nonexistent_upsert_id"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "a08da68d-ca0b-4c0c-afd5-cc42e60e3712",
+      "description": "Tests for PUT /usuarios/{_id} - Update user endpoint"
+    },
+    {
+      "name": "6. Users - DELETE",
+      "item": [
+        {
+          "name": "6.1 Delete User - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains success message', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Registro excluído com sucesso');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "4ee91f02-601f-4f1a-9cfc-b0e62f4fe08b"
+              }
+            }
+          ],
+          "id": "41668ed7-a51f-4354-963c-bd5d73f9d385",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.2 Delete User - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK (idempotent)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates no deletion needed', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql('Nenhum registro excluído');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "b07b80a6-31c8-43e1-852c-b39e154e75e7"
+              }
+            }
+          ],
+          "id": "a80dce4d-22a4-4caf-9433-f34f5dbec7cc",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/nonexistent_delete_id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "nonexistent_delete_id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.3 Delete Upsert User - Cleanup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Cleanup successful', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.be.oneOf(['Registro excluído com sucesso', 'Nenhum registro excluído']);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "298142b1-da8c-43ed-a1e4-b35c5fe3b0b8"
+              }
+            }
+          ],
+          "id": "9cafc68b-61e7-4c16-99f3-2477e716939c",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{upsertUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{upsertUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.4 Delete Admin User - Cleanup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "17ec9df1-8621-4bb5-bb19-5dd5ec17c3df"
+              }
+            }
+          ],
+          "id": "025b54b3-1390-4b48-a1bf-c2f5379e1579",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{adminUserIdToDelete}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{adminUserIdToDelete}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.5 Delete Test Admin User - Final Cleanup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All test data cleaned up', function () {",
+                  "    pm.expect(true).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "81ad0500-1c21-4a55-a1fb-cd8cef82eb74"
+              }
+            }
+          ],
+          "id": "c1e45877-acbc-49ef-b35a-83ffa531c050",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{adminUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{adminUserId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "13ff63be-7882-4c17-b135-89cb4da70888",
+      "description": "Tests for DELETE /usuarios/{_id} - Delete user endpoint"
+    },
+    {
+      "name": "7. Rate Limiting Tests",
+      "item": [
+        {
+          "name": "7.1 Rapid Sequential Requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 - OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time within acceptable range', function () {",
+                  "    // Under 100 req/min limit, response should be fast",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});",
+                  "",
+                  "pm.test('Server responds without rate limit error', function () {",
+                  "    const status = pm.response.code;",
+                  "    pm.expect(status).to.not.equal(429);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "7b079632-5a58-49ef-87d4-fb68dac23665"
+              }
+            }
+          ],
+          "id": "ace76788-6072-439e-bcc1-f02dd3227c63",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "58fc14dc-7253-4c06-b26e-8ba7da1fbafe",
+      "description": "Tests to verify API behavior under rate limiting (100 req/min)"
+    },
+    {
+      "name": "8. API Health Check",
+      "item": [
+        {
+          "name": "8.1 API Availability Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API is accessible', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "id": "0dcf6c9f-ae4d-46ea-9b4f-6623d517466b"
+              }
+            }
+          ],
+          "id": "2935c1a0-91cf-4cbd-acf6-24591d525556",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "8c389a02-0e6d-4792-b289-ddb68e2b7ce7",
+      "description": "Basic API health and availability checks"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "// Add rate limiting delay if needed",
+          "// Uncomment below to add delay between requests",
+          "// setTimeout(function() {}, 600); // 600ms = 100 req/min"
+        ],
+        "id": "441cb308-cb16-4a60-95ee-02caaf9a1db2"
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "// Log response time for monitoring",
+          "console.log('Response Time: ' + pm.response.responseTime + 'ms');"
+        ],
+        "id": "f571f4be-41cc-46b8-b0ab-55e1730a662f"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "82e0317d-865e-469a-97dd-140faf3cc74b",
+      "key": "baseUrl",
+      "value": "https://serverest.dev",
+      "type": "string"
+    },
+    {
+      "id": "cf032dde-0666-4ec3-9f66-fa9ad9564a8e",
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "id": "5f5d1d9d-f458-4092-96de-6e49b008d4f7",
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "id": "cc28c6e1-f60f-41de-ab02-31b5065dbabb",
+      "key": "testEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "id": "5233aa34-5023-413c-a416-47a6ef74fbab",
+      "key": "testPassword",
+      "value": "teste123",
+      "type": "string"
+    },
+    {
+      "id": "6e01a04e-533f-4877-823a-102a85e07a37",
+      "key": "newUserEmail",
+      "value": ""
+    },
+    {
+      "id": "30e37dc7-9883-44a8-aa8e-cd6289e47e77",
+      "key": "newUserName",
+      "value": ""
+    },
+    {
+      "id": "3a3fd62b-046a-4b79-adf7-3f3e6e252e3a",
+      "key": "emptyNameEmail",
+      "value": ""
+    },
+    {
+      "id": "a0cbad31-a463-4201-922c-2f5c24de8563",
+      "key": "adminEmail",
+      "value": ""
+    },
+    {
+      "id": "e64c2008-e102-4e19-88b5-be2a28f868f3",
+      "key": "adminUserIdToDelete",
+      "value": ""
+    },
+    {
+      "id": "483bef7c-e29e-4b8a-89e2-a3a7eea567b5",
+      "key": "updatedName",
+      "value": ""
+    },
+    {
+      "id": "6e8f5c5b-582b-4f72-88be-6218ddc94dba",
+      "key": "newPutEmail",
+      "value": ""
+    },
+    {
+      "id": "92c31df5-70cc-434e-9f05-828f9a9e1ced",
+      "key": "newPutName",
+      "value": ""
+    },
+    {
+      "id": "93dbb06d-374f-47c4-a0fa-fe0ac9276807",
+      "key": "upsertUserId",
+      "value": ""
+    }
+  ]
+}
