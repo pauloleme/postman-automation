@@ -2,12 +2,12 @@ name: ServeRest API Tests
 
 on:
   push:
-    branches: main
+    branches: [main, master, develop]
   pull_request:
-    branches: main
-  workflow_dispatch: 
+    branches: [main, master, develop]
+  workflow_dispatch: # Permite execução manual
   schedule:
-    - cron: '0 8 * * *' 
+    - cron: '0 8 * * *' # Executa diariamente às 8h UTC
 
 jobs:
   api-tests:
@@ -34,7 +34,6 @@ jobs:
           newman run ServeRest-Collection.postman_collection.json \
             -e ServeRest-Environment.postman_environment.json \
             --delay-request 600 \
-            --globals globals.json \
             --reporters cli,htmlextra \
             --reporter-htmlextra-export reports/test-report.html \
             --reporter-htmlextra-title "ServeRest API Test Report" \

@@ -6,7 +6,6 @@ Automated tests for the ServeRest API (https://serverest.dev/) using Postman.
 
 - `ServeRest-Collection.postman_collection.json` - Collection with all tests
 - `ServeRest-Environment.postman_environment.json` - Environment variables
-- `globals.json` - Global variables file for Newman
 
 ## How to run
 
@@ -25,7 +24,6 @@ npm install -g newman
 
 newman run ServeRest-Collection.postman_collection.json \
     -e ServeRest-Environment.postman_environment.json \
-    --globals globals.json \
     --delay-request 600
 ```
 
@@ -67,4 +65,4 @@ newman run ServeRest-Collection.postman_collection.json \
 
 - The API has a 100 requests per minute limit, hence the 600ms delay
 - Tests create and delete data automatically (self-cleaning)
-- All tests use `pm.globals` for variable persistence across requests
+- All tests use `pm.environment` for variable persistence across requests

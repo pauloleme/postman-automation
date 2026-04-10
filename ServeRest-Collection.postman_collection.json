@@ -24,8 +24,8 @@
 							"script": {
 								"exec": [
 									"const timestamp = Date.now();",
-									"pm.globals.set('testEmail', 'admin_' + timestamp + '@teste.com');",
-									"pm.globals.set('testPassword', 'teste123');"
+									"pm.environment.set('testEmail', 'admin_' + timestamp + '@teste.com');",
+									"pm.environment.set('testPassword', 'teste123');"
 								],
 								"type": "text/javascript"
 							}
@@ -41,7 +41,7 @@
 									"pm.test('User created successfully', function () {",
 									"    const jsonData = pm.response.json();",
 									"    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
-									"    pm.globals.set('adminUserId', jsonData._id);",
+									"    pm.environment.set('adminUserId', jsonData._id);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -68,8 +68,8 @@
 							"script": {
 								"exec": [
 									"const timestamp = Date.now();",
-									"pm.globals.set('newUserEmail', 'user_' + timestamp + '@teste.com');",
-									"pm.globals.set('newUserName', 'Test User ' + timestamp);"
+									"pm.environment.set('newUserEmail', 'user_' + timestamp + '@teste.com');",
+									"pm.environment.set('newUserName', 'Test User ' + timestamp);"
 								],
 								"type": "text/javascript"
 							}
@@ -85,7 +85,7 @@
 									"pm.test('User created successfully', function () {",
 									"    const jsonData = pm.response.json();",
 									"    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
-									"    pm.globals.set('userId', jsonData._id);",
+									"    pm.environment.set('userId', jsonData._id);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -107,7 +107,7 @@
 							"script": {
 								"exec": [
 									"const timestamp = Date.now();",
-									"pm.globals.set('adminEmail', 'admin_new_' + timestamp + '@teste.com');"
+									"pm.environment.set('adminEmail', 'admin_new_' + timestamp + '@teste.com');"
 								],
 								"type": "text/javascript"
 							}
@@ -123,7 +123,7 @@
 									"pm.test('Admin created successfully', function () {",
 									"    const jsonData = pm.response.json();",
 									"    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
-									"    pm.globals.set('adminUserIdToDelete', jsonData._id);",
+									"    pm.environment.set('adminUserIdToDelete', jsonData._id);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -243,7 +243,7 @@
 									"    const jsonData = pm.response.json();",
 									"    pm.expect(jsonData).to.have.property('nome');",
 									"    pm.expect(jsonData).to.have.property('email');",
-									"    pm.expect(jsonData._id).to.eql(pm.globals.get('userId'));",
+									"    pm.expect(jsonData._id).to.eql(pm.environment.get('userId'));",
 									"});"
 								],
 								"type": "text/javascript"
@@ -267,7 +267,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"exec": ["pm.globals.set('updatedName', 'Updated User ' + Date.now());"],
+								"exec": ["pm.environment.set('updatedName', 'Updated User ' + Date.now());"],
 								"type": "text/javascript"
 							}
 						},
@@ -303,8 +303,8 @@
 							"script": {
 								"exec": [
 									"const timestamp = Date.now();",
-									"pm.globals.set('newPutEmail', 'newput_' + timestamp + '@teste.com');",
-									"pm.globals.set('newPutName', 'New Put User ' + timestamp);"
+									"pm.environment.set('newPutEmail', 'newput_' + timestamp + '@teste.com');",
+									"pm.environment.set('newPutName', 'New Put User ' + timestamp);"
 								],
 								"type": "text/javascript"
 							}
@@ -320,7 +320,7 @@
 									"pm.test('User created via upsert', function () {",
 									"    const jsonData = pm.response.json();",
 									"    pm.expect(jsonData.message).to.eql('Cadastro realizado com sucesso');",
-									"    pm.globals.set('upsertUserId', jsonData._id);",
+									"    pm.environment.set('upsertUserId', jsonData._id);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -435,18 +435,18 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"pm.globals.unset('testEmail');",
-									"pm.globals.unset('testPassword');",
-									"pm.globals.unset('adminUserId');",
-									"pm.globals.unset('userId');",
-									"pm.globals.unset('newUserEmail');",
-									"pm.globals.unset('newUserName');",
-									"pm.globals.unset('adminEmail');",
-									"pm.globals.unset('adminUserIdToDelete');",
-									"pm.globals.unset('updatedName');",
-									"pm.globals.unset('newPutEmail');",
-									"pm.globals.unset('newPutName');",
-									"pm.globals.unset('upsertUserId');"
+									"pm.environment.unset('testEmail');",
+									"pm.environment.unset('testPassword');",
+									"pm.environment.unset('adminUserId');",
+									"pm.environment.unset('userId');",
+									"pm.environment.unset('newUserEmail');",
+									"pm.environment.unset('newUserName');",
+									"pm.environment.unset('adminEmail');",
+									"pm.environment.unset('adminUserIdToDelete');",
+									"pm.environment.unset('updatedName');",
+									"pm.environment.unset('newPutEmail');",
+									"pm.environment.unset('newPutName');",
+									"pm.environment.unset('upsertUserId');"
 								],
 								"type": "text/javascript"
 							}
