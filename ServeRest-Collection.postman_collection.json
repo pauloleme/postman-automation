@@ -352,7 +352,7 @@
 									"",
 									"pm.test('User deleted', function () {",
 									"    const jsonData = pm.response.json();",
-									"    pm.expect(jsonData.message).to.eql('Registro excluido com sucesso');",
+									"    pm.expect(jsonData.message).to.eql('Registro excluído com sucesso');",
 									"});"
 								],
 								"type": "text/javascript"
